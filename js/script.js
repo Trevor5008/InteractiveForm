@@ -13,12 +13,33 @@ const tShirtColorSlct = document.getElementById('color');
 const colorOptions = tShirtColorSlct.querySelectorAll('option');
 
 tShirtColorSlct.setAttribute('disabled', '');
-colorOptions.forEach(option => option.setAttribute('hidden', ''));
+colorOptions.forEach(option => option.setAttribute('hidden', true));
 
 /* Activities Section */
 const activitySctn = document.getElementById('activities');
 const activitiesCost = document.getElementById('activities-cost');
 let totalCost = 0;
+
+/* Payment Info */
+const payMethodSlct = document.getElementById('payment');
+// initial default = credit card option
+const options = ['credit-card', 'paypal', 'bitcoin'];
+payMethodSlct.querySelector(`option[value="${options[0]}"]`)
+   .setAttribute('selected', true);
+
+const hideNonOptions =(chosen)=> {
+   const chosenIdx = options.indexOf(chosen);
+   options.forEach(option => {
+      const div = document.getElementById(option);
+      div.setAttribute('hidden', true);
+      if (div.matches(`#${options[chosenIdx]}`)) {
+         div.removeAttribute('hidden');
+      }
+   });
+};
+
+// hide non-cc options on initial load
+hideNonOptions('credit-card');
 
 /* Event Listeners */
 jobRoleSlct.addEventListener('change', e => {
@@ -59,12 +80,8 @@ tShirtDesignSlct.addEventListener('change', e => {
 
 activitySctn.addEventListener('change', e => {
    let cost = parseInt(e.target.getAttribute('data-cost'));
-   // add 'checked' attribute to determine status
-   if (!e.target.hasAttribute('checked')) {
-      e.target.setAttribute('checked', '');
-   } else {
-      e.target.removeAttribute('checked');
-   }
+
+   e.target.toggleAttribute('checked');
    let checked = e.target.hasAttribute('checked');
    if (checked) {
       totalCost += cost;
@@ -73,4 +90,14 @@ activitySctn.addEventListener('change', e => {
    }
    // update subtotal (display)
    activitiesCost.textContent = `Total: $${totalCost}`;
+});
+
+payMethodSlct.addEventListener('change', e => {
+   document.querySelectorAll('#payment option')
+      .forEach((option) => option.removeAttribute('selected'));
+
+   const option = e.target.value;
+   payMethodSlct.querySelector(`option[value=${option}]`)
+      .toggleAttribute('selected');
+   hideNonOptions(option);
 });
