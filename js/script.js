@@ -15,6 +15,11 @@ const colorOptions = tShirtColorSlct.querySelectorAll('option');
 tShirtColorSlct.setAttribute('disabled', '');
 colorOptions.forEach(option => option.setAttribute('hidden', ''));
 
+/* Activities Section */
+const activitySctn = document.getElementById('activities');
+const activitiesCost = document.getElementById('activities-cost');
+let totalCost = 0;
+
 /* Event Listeners */
 jobRoleSlct.addEventListener('change', e => {
    const selected = e.target.value;
@@ -50,4 +55,22 @@ tShirtDesignSlct.addEventListener('change', e => {
          options[i].setAttribute('selected', '');
       }
    }
+});
+
+activitySctn.addEventListener('change', e => {
+   let cost = parseInt(e.target.getAttribute('data-cost'));
+   // add 'checked' attribute to determine status
+   if (!e.target.hasAttribute('checked')) {
+      e.target.setAttribute('checked', '');
+   } else {
+      e.target.removeAttribute('checked');
+   }
+   let checked = e.target.hasAttribute('checked');
+   if (checked) {
+      totalCost += cost;
+   } else {
+      totalCost -= cost;
+   }
+   // update subtotal (display)
+   activitiesCost.textContent = `Total: $${totalCost}`;
 });
