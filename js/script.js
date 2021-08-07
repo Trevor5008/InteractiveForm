@@ -21,16 +21,25 @@ colorOptions.forEach(option => option.setAttribute('hidden', true));
 /* Activities Section */
 const activitySctn = document.getElementById('activities');
 const activitiesCost = document.getElementById('activities-cost');
+// store selected activities
+let activities = [];
+// accumulator for activity cost
 let totalCost = 0;
 
 /* Payment Info */
 const payMethodSlct = document.getElementById('payment');
+const creditCardFlds = document.getElementById('credit-card');
+const cardNumber = creditCardFlds.querySelector('#cc-num');
+const cardZip = creditCardFlds.querySelector('#zip');
+const cardCVV = creditCardFlds.querySelector('#cvv');
 // initial default = credit card option
 const options = ['credit-card', 'paypal', 'bitcoin'];
-payMethodSlct.querySelector(`option[value="${options[0]}"]`)
+let chosenOption = options[0];
+payMethodSlct.querySelector(`option[value="${chosenOption}"]`)
    .setAttribute('selected', true);
 
-const hideNonOptions =(chosen)=> {
+/* Helper Functions */
+const hideNonOptions = chosen => {
    const chosenIdx = options.indexOf(chosen);
    options.forEach(option => {
       const div = document.getElementById(option);
@@ -40,6 +49,20 @@ const hideNonOptions =(chosen)=> {
       }
    });
 };
+
+const isValidName = name => {
+   const nameFldRegEx = /[a-z]+/i;
+   return nameFldRegEx.test(name);
+};
+
+const isValidEmail = email => {
+   const emailFldRegEx = /^[a-z\d]+@[a-z]+\.(com)$/i;
+   return emailFldRegEx.test(email);
+};
+
+const isValidCardNumber = (cardNum) => /[\d]{13,16}/.test(cardNum);
+const isValidZip = (zip) => /[\d]{5}/.test(zip);
+const isValidCVV = (cvv) => /[\d]{3}/.test(cvv);
 
 // hide non-cc options on initial load
 hideNonOptions('credit-card');
@@ -83,12 +106,16 @@ tShirtDesignSlct.addEventListener('change', e => {
 
 activitySctn.addEventListener('change', e => {
    let cost = parseInt(e.target.getAttribute('data-cost'));
-
+   let activity = e.target.name;
    e.target.toggleAttribute('checked');
    let checked = e.target.hasAttribute('checked');
+
    if (checked) {
+      activities.push(activity);
       totalCost += cost;
    } else {
+      let activityIdx = activities.indexOf(activity);
+      activities.splice(activityIdx, 1);
       totalCost -= cost;
    }
    // update subtotal (display)
@@ -99,18 +126,40 @@ payMethodSlct.addEventListener('change', e => {
    document.querySelectorAll('#payment option')
       .forEach((option) => option.removeAttribute('selected'));
 
-   const option = e.target.value;
-   payMethodSlct.querySelector(`option[value=${option}]`)
+   chosenOption = e.target.value;
+   payMethodSlct.querySelector(`option[value=${chosenOption}]`)
       .toggleAttribute('selected');
-   hideNonOptions(option);
+   hideNonOptions(chosenOption);
 });
 
+/* Form submit handler */
 form.addEventListener('submit', (e) => {
    e.preventDefault();
-   const nameFldRegEx = /[a-z]+/i;
-   const emailFldRegEx = /^[a-z\d]+@[a-z]+\.(com)$/i;
-   const validName = nameFldRegEx.test(nameFld.value);   
-   const validEmail = emailFldRegEx.test(emailFld.value);
+
+   const validName = isValidName(nameFld.value);   
+   const validEmail = isValidEmail(emailFld.value);
+
+   if (chosenOption === 'credit-card') {
+      const num = cardNumber.value, zip = cardZip.value, cvv = cardCVV.value;
+      const validCardNum = isValidCardNumber(num), 
+         validZip = isValidZip(zip), validCVV = isValidCVV(cvv);
+      if (!validCardNum) {
+         console.log('invalid card number')
+      } 
+      if (!validZip) {
+         console.log('invalid zip code')
+      } 
+      if (!validCVV) {
+         console.log('invalid CVV')
+      } else {
+         console.log('valid credit card')
+      }
+   }
+
+   if (activities.length === 0) {
+      console.log('please choose at least one activity to proceed')
+   }
+
    if (!validName && !validEmail) {
       nameFld.focus()
       console.log('correct incorrect entries')
