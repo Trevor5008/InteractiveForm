@@ -1,5 +1,8 @@
+const form = document.querySelector('form');
+
 /* Basic Info */
 const nameFld = document.getElementById('name');
+const emailFld = document.getElementById('email');
 nameFld.focus();
 
 const jobRoleSlct = document.getElementById('title');
@@ -100,4 +103,24 @@ payMethodSlct.addEventListener('change', e => {
    payMethodSlct.querySelector(`option[value=${option}]`)
       .toggleAttribute('selected');
    hideNonOptions(option);
+});
+
+form.addEventListener('submit', (e) => {
+   e.preventDefault();
+   const nameFldRegEx = /[a-z]+/i;
+   const emailFldRegEx = /^[a-z\d]+@[a-z]+\.(com)$/i;
+   const validName = nameFldRegEx.test(nameFld.value);   
+   const validEmail = emailFldRegEx.test(emailFld.value);
+   if (!validName && !validEmail) {
+      nameFld.focus()
+      console.log('correct incorrect entries')
+   } else if (!validName) {
+      nameFld.focus();
+      console.log('please correct name field')
+   } else if (!validEmail) {
+      emailFld.focus();
+      console.log('please correct email field')
+   } else {
+      console.log('submitted')
+   }
 });
