@@ -2,16 +2,9 @@ const form = document.querySelector('form');
 
 /* Basic Info */
 const nameFld = document.getElementById('name');
-nameFld.addEventListener('blur', () => {
-   console.log(nameFld.value)
-})
 const emailFld = document.getElementById('email');
-nameFld.focus();
-
 const jobRoleSlct = document.getElementById('title');
 const otherJobFld = document.getElementById('other-job-role');
-
-otherJobFld.style.display = 'none';
 
 /* T-Shirt Info */
 const tShirtDesignSlct = document.getElementById('design');
@@ -27,6 +20,7 @@ const activityChkBxs = activitySctn.querySelectorAll('input');
 const activitiesCost = document.getElementById('activities-cost');
 // store selected activities
 let activities = [];
+let scheduled = [];
 // accumulator for activity cost
 let totalCost = 0;
 
@@ -39,6 +33,10 @@ const cardCVV = creditCardFlds.querySelector('#cvv');
 // initial default = credit card option
 const options = ['credit-card', 'paypal', 'bitcoin'];
 let chosenOption = options[0];
+
+/* Initial load */
+nameFld.focus();
+otherJobFld.style.display = 'none';
 payMethodSlct.querySelector(`option[value="${chosenOption}"]`)
    .setAttribute('selected', true);
 
@@ -54,15 +52,48 @@ const hideNonOptions = chosen => {
    });
 };
 
+// hide non-cc options (initial load)
+hideNonOptions('credit-card');
+
+const validationPass = element => {
+   const target = element.tagName === 'INPUT' 
+      ? element.parentElement : element;
+   target.classList.add('valid');
+   target.classList.remove('not-valid');
+   target.lastElementChild.style.display = 'none';
+};
+
+const validationFail = (element, evt) => {
+   evt.preventDefault();
+   const target = element.tagName === 'INPUT' 
+      ? element.parentElement : element;
+   target.classList.add('not-valid');
+   target.classList.remove('valid');
+   target.lastElementChild.style.display = 'inherit';
+};
+
+// helper for activity conflicts
+const handleConflicts = (activity, slot, isChecked) => {
+   activityChkBxs.forEach(act => {
+      let time = act.getAttribute('data-day-and-time');
+      if (act.name !== activity && time === slot) {
+         if (isChecked) {
+            act.parentElement.classList.add('disabled');
+            act.setAttribute('disabled', true);
+         } else {
+            act.parentElement.classList.remove('disabled');
+            act.removeAttribute('disabled');   
+         }
+      }
+   });
+}
+
 /* RegEx Helpers */
 const isValidName = name => /^[a-z]+$/i.test(name);
 const isValidEmail = email => /^[a-z\d]+@[a-z]+\.(com)$/i.test(email);
 const isValidCardNumber = cardNum => /[\d]{13,16}/.test(cardNum);
 const isValidZip = zip => /[\d]{5}/.test(zip);
 const isValidCVV = cvv => /[\d]{3}/.test(cvv);
-
-// hide non-cc options on initial load
-hideNonOptions('credit-card');
 
 /* Event Listeners */
 jobRoleSlct.addEventListener('change', e => {
@@ -104,17 +135,27 @@ tShirtDesignSlct.addEventListener('change', e => {
 activitySctn.addEventListener('change', e => {
    let cost = parseInt(e.target.getAttribute('data-cost'));
    let activity = e.target.name;
+   let timeSlot = e.target.getAttribute('data-day-and-time');
+
    e.target.toggleAttribute('checked');
+
    let checked = e.target.hasAttribute('checked');
 
    if (checked) {
+      // disable conflicting activity opitions
+      handleConflicts(activity, timeSlot, true);
       activities.push(activity);
+      scheduled.push(timeSlot)
       totalCost += cost;
    } else {
       let activityIdx = activities.indexOf(activity);
+      let scheduleIdx = scheduled.indexOf(timeSlot);
+      handleConflicts(activity, timeSlot, false);
       activities.splice(activityIdx, 1);
+      scheduled.splice(scheduleIdx, 1);
       totalCost -= cost;
    }
+
    // update subtotal (display)
    activitiesCost.textContent = `Total: $${totalCost}`;
 });
@@ -146,37 +187,17 @@ form.addEventListener('submit', (e) => {
    const validName = isValidName(nameFld.value);   
    const validEmail = isValidEmail(emailFld.value);
 
+   !validName ? validationFail(nameFld, e) : validationPass(nameFld);
+   !validEmail ? validationFail(emailFld, e) : validationPass(emailFld);
+   activities.length === 0 ? validationFail(activitySctn, e) 
+      : validationPass(activitySctn);
+
    if (chosenOption === 'credit-card') {
       const num = cardNumber.value, zip = cardZip.value, cvv = cardCVV.value;
       const validCardNum = isValidCardNumber(num), 
          validZip = isValidZip(zip), validCVV = isValidCVV(cvv);
-      if (!validCardNum) {
-         console.log('invalid card number')
-         e.preventDefault();
-      } 
-      if (!validZip) {
-         console.log('invalid zip code')
-         e.preventDefault();
-      } 
-      if (!validCVV) {
-         console.log('invalid CVV')
-         e.preventDefault();
-      } else {
-         console.log('valid credit card')
-      }
+      !validCardNum ? validationFail(cardNumber, e) : validationPass(cardNumber);
+      !validZip ? validationFail(cardZip, e) : validationPass(cardZip);
+      !validCVV ? validationFail(cardCVV, e) : validationPass(cardCVV);
    }
-
-   if (activities.length === 0) {
-      e.preventDefault();
-      console.log('please choose at least one activity to proceed')
-   }
-
-   if (!validName) {
-      nameFld.focus();
-      console.log('please correct name field')
-   } 
-   if (!validEmail) {
-      emailFld.focus();
-      console.log('please correct email field')
-   } 
 });
