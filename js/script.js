@@ -58,18 +58,25 @@ hideNonOptions('credit-card');
 const validationPass = element => {
    const target = element.tagName === 'INPUT' 
       ? element.parentElement : element;
+   const hint = target.lastElementChild;
    target.classList.add('valid');
    target.classList.remove('not-valid');
-   target.lastElementChild.style.display = 'none';
+   hint.style.display = 'none';
 };
 
-const validationFail = (element, evt) => {
+const validationFail = (element, evt, isEmpty) => {
    evt.preventDefault();
    const target = element.tagName === 'INPUT' 
       ? element.parentElement : element;
+   const hint = target.lastElementChild;
+   const isActivity = element.getAttribute('id') === 'activities';
    target.classList.add('not-valid');
    target.classList.remove('valid');
-   target.lastElementChild.style.display = 'inherit';
+   hint.textContent = isEmpty && !isActivity 
+      ? `${element.getAttribute('id')} cannot be empty` 
+      : isEmpty ? `Must choose at least one activity`
+      : `${element.getAttribute('id')} must be formatted correctly`;
+   hint.style.display = 'inherit';
 };
 
 // helper for activity conflicts
@@ -86,16 +93,42 @@ const handleConflicts = (activity, slot, isChecked) => {
          }
       }
    });
-}
+};
 
 /* RegEx Helpers */
 const isValidName = name => /^[a-z]+$/i.test(name);
 const isValidEmail = email => /^[a-z\d]+@[a-z]+\.(com)$/i.test(email);
-const isValidCardNumber = cardNum => /[\d]{13,16}/.test(cardNum);
+const isValidCardNumber = cardNum => /^[\d]{13,16}$/.test(cardNum);
 const isValidZip = zip => /[\d]{5}/.test(zip);
 const isValidCVV = cvv => /[\d]{3}/.test(cvv);
 
 /* Event Listeners */
+nameFld.addEventListener('keyup', (e) => {
+   const name = nameFld.value;
+   !isValidName(name) ? validationFail(nameFld, e) : validationPass(nameFld);
+});
+
+emailFld.addEventListener('keyup', (e) => {
+   const email = emailFld.value;
+   !isValidEmail(email) ? validationFail(emailFld, e) : validationPass(emailFld);
+});
+
+cardNumber.addEventListener('keyup', (e) => {
+   const cardNum = cardNumber.value;
+   !isValidCardNumber(cardNum) ? validationFail(cardNumber, e) 
+      : validationPass(cardNumber);
+});
+
+cardZip.addEventListener('keyup', (e) => {
+   const zip = cardZip.value;
+   !isValidZip(zip) ? validationFail(cardZip, e) : validationPass(cardZip);
+});
+
+cardCVV.addEventListener('keyup', (e) => {
+   const cvv = cardCVV.value;
+   !isValidCVV(cvv) ? validationFail(cardCVV, e) : validationPass(cardCVV);
+});
+
 jobRoleSlct.addEventListener('change', e => {
    const selected = e.target.value;
    if (selected === 'other') {
@@ -148,9 +181,10 @@ activitySctn.addEventListener('change', e => {
       scheduled.push(timeSlot)
       totalCost += cost;
    } else {
+      // re-enable any disabled activities
+      handleConflicts(activity, timeSlot, false);
       let activityIdx = activities.indexOf(activity);
       let scheduleIdx = scheduled.indexOf(timeSlot);
-      handleConflicts(activity, timeSlot, false);
       activities.splice(activityIdx, 1);
       scheduled.splice(scheduleIdx, 1);
       totalCost -= cost;
@@ -181,23 +215,20 @@ activityChkBxs.forEach(chkBx => {
 
 /* Form submit handler */
 form.addEventListener('submit', (e) => {
-   // s/b removed after testing
-   e.preventDefault();
-
-   const validName = isValidName(nameFld.value);   
-   const validEmail = isValidEmail(emailFld.value);
-
-   !validName ? validationFail(nameFld, e) : validationPass(nameFld);
-   !validEmail ? validationFail(emailFld, e) : validationPass(emailFld);
-   activities.length === 0 ? validationFail(activitySctn, e) 
-      : validationPass(activitySctn);
+   // check for empty fields across all required
+   nameFld.value === '' ? validationFail(nameFld, e, true) 
+     : validationPass(nameFld);  
+   emailFld.value === '' ? validationFail(emailFld, e, true) 
+     : validationPass(emailFld);
+   activities.length === 0 ? validationFail(activitySctn, e, true) 
+     : validationPass(activitySctn);
 
    if (chosenOption === 'credit-card') {
-      const num = cardNumber.value, zip = cardZip.value, cvv = cardCVV.value;
-      const validCardNum = isValidCardNumber(num), 
-         validZip = isValidZip(zip), validCVV = isValidCVV(cvv);
-      !validCardNum ? validationFail(cardNumber, e) : validationPass(cardNumber);
-      !validZip ? validationFail(cardZip, e) : validationPass(cardZip);
-      !validCVV ? validationFail(cardCVV, e) : validationPass(cardCVV);
+      cardNumber.value === '' ? validationFail(cardNumber, e, true) 
+         : validationPass(cardNumber);
+      cardZip.value === '' ? validationFail(cardZip, e, true) 
+         : validationPass(cardZip);
+      cardCVV.value === '' ? validationFail(cardCVV, e, true) 
+         : validationPass(cardCVV);
    }
 });
