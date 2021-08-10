@@ -99,13 +99,17 @@ const handleConflicts = (activity, slot, isChecked) => {
 const isValidName = name => /^[a-z]+$/i.test(name);
 const isValidEmail = email => /^[a-z\d]+@[a-z]+\.(com)$/i.test(email);
 const isValidCardNumber = cardNum => /^[\d]{13,16}$/.test(cardNum);
-const isValidZip = zip => /[\d]{5}/.test(zip);
-const isValidCVV = cvv => /[\d]{3}/.test(cvv);
+const isValidZip = zip => /^[\d]{5}$/.test(zip);
+const isValidCVV = cvv => /^[\d]{3}$/.test(cvv);
 
 /* Event Listeners */
 nameFld.addEventListener('keyup', (e) => {
    const name = nameFld.value;
-   !isValidName(name) ? validationFail(nameFld, e) : validationPass(nameFld);
+   if (!isValidName(name)) {
+      validationFail(nameFld, e);
+   } else {
+      validationPass(nameFld);
+   }
 });
 
 emailFld.addEventListener('keyup', (e) => {
@@ -204,6 +208,7 @@ payMethodSlct.addEventListener('change', e => {
    hideNonOptions(chosenOption);
 });
 
+// Add listeners on each checkbox w/in activities section
 activityChkBxs.forEach(chkBx => {
    chkBx.addEventListener('focus', () => {
       chkBx.parentElement.className = 'focus';
@@ -215,20 +220,43 @@ activityChkBxs.forEach(chkBx => {
 
 /* Form submit handler */
 form.addEventListener('submit', (e) => {
-   // check for empty fields across all required
-   nameFld.value === '' ? validationFail(nameFld, e, true) 
-     : validationPass(nameFld);  
-   emailFld.value === '' ? validationFail(emailFld, e, true) 
-     : validationPass(emailFld);
-   activities.length === 0 ? validationFail(activitySctn, e, true) 
-     : validationPass(activitySctn);
+   const name = nameFld.value, email = emailFld.value;
+   
+   if (nameFld.value === '') {
+      validationFail(nameFld, e, true); 
+   } else if (!isValidName(name)) {
+      validationFail(nameFld, e);
+   }
+   if (emailFld.value === '') {
+      validationFail(emailFld, e, true); 
+   } else if (!isValidEmail(email)) {
+      validationFail(emailFld, e);
+   }
+
+   if (activities.length === 0) {
+      validationFail(activitySctn, e, true); 
+   } else {
+      validationPass(activitySctn);
+   }
 
    if (chosenOption === 'credit-card') {
-      cardNumber.value === '' ? validationFail(cardNumber, e, true) 
-         : validationPass(cardNumber);
-      cardZip.value === '' ? validationFail(cardZip, e, true) 
-         : validationPass(cardZip);
-      cardCVV.value === '' ? validationFail(cardCVV, e, true) 
-         : validationPass(cardCVV);
+      const cardNum = cardNumber.value, 
+        zip = cardZip.value, cvv = cardCVV.value;
+        
+      if (cardNumber.value === '') {
+         validationFail(cardNumber, e, true); 
+      } else if (!isValidCardNumber(cardNum)) {
+         validationFail(cardNumber, e);
+      }
+      if (cardZip.value === '') {
+         validationFail(cardZip, e, true) ;
+      } else if (!isValidZip(zip)) {
+         validationFail(cardZip, e);
+      }
+      if (cardCVV.value === '') {
+         validationFail(cardCVV, e, true); 
+      } else if (!isValidCVV(cvv)) {
+         validationFail(cardCVV, e);
+      }
    }
 });
